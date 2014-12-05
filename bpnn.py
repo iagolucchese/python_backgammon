@@ -165,7 +165,5 @@ def demo():
     # test it
     n.test(pat)
 
-
-
 if __name__ == '__main__':
     demo()
