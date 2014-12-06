@@ -1,4 +1,4 @@
-"""
+﻿"""
 Algorithms for evaluating how good a Board is for a given color.
 """
 __all__ = ['Weights', 'simply_weighted', 'aggressive', 'safe']

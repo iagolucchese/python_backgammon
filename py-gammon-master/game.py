@@ -1,4 +1,4 @@
-"""
+﻿"""
 A way to "play" a game of backgammon.  Not much fun right now but it's a start.
 """
 __all__ = ['Game']

@@ -1,5 +1,5 @@
 # Back-Propagation Neural Networks
-# 
+#
 # Written in Python.  See http://www.python.org/
 # Placed in the public domain.
 # Neil Schemenauer <nas@arctrix.com>
@@ -7,6 +7,7 @@
 import math
 import random
 import string
+import os
 
 random.seed(0)
 
@@ -40,7 +41,7 @@ class NN:
         self.ai = [1.0]*self.ni
         self.ah = [1.0]*self.nh
         self.ao = [1.0]*self.no
-        
+
         # create weights
         self.wi = makeMatrix(self.ni, self.nh)
         self.wo = makeMatrix(self.nh, self.no)
@@ -52,9 +53,34 @@ class NN:
             for k in range(self.no):
                 self.wo[j][k] = rand(-2.0, 2.0)
 
-        # last change in weights for momentum   
+        # last change in weights for momentum
         self.ci = makeMatrix(self.ni, self.nh)
         self.co = makeMatrix(self.nh, self.no)
+
+    def writeWeightsToFile(self, filename):
+        file = open(filename + "_input_weights",'w')
+        wi.tofile(file)
+        file.flush()
+        file.close()
+
+        file = open(filename + "_output_weights",'w')
+        wo.tofile(file)
+        file.flush()
+        file.close()
+
+    def loadWeightsFromFile(self, filename):
+        if os.path.isfile(filename + "_input_weights"):
+                file = open(filename + "_input_weights",'r')
+                size = len(self.wi)
+                self.wi = []
+                self.wi.fromfile(file,size)
+                file.close()
+        if os.path.isfile(filename + "_output_weights"):
+                file = open(filename + "_output_weights",'r')
+                size = len(self.wo)
+                self.wo = []
+                self.wo.fromfile(file,size)
+                file.close()
 
     def update(self, inputs):
         if len(inputs) != self.ni-1:

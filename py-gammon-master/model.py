@@ -1,4 +1,4 @@
-"""
+﻿"""
 Definitions for the main object in a game.
 """
 __all__ = ['Board', 'Roll', 'Turn', 'WHITE', 'BLACK']
