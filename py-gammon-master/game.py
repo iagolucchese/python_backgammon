@@ -137,10 +137,19 @@ class Game(object):
         """
         The main game loop.
         """
+		i = 0
         while True:
             I.roll_dice()
             player = I.white if I.color == WHITE else I.black
             player.interact(I)
+            
+            i++
+            print "turn",i
+			
+			print I.board.finished()
+            if I.board.finished():
+                print "game's over,",player,"won"
+                break
 
     def roll_dice(I, roll=None):
         """

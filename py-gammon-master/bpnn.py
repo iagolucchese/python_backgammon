@@ -9,7 +9,7 @@ import random
 import string
 import os
 
-random.seed(0)
+random.seed()
 
 # calculate a random number where:  a <= rand < b
 def rand(a, b):
@@ -48,44 +48,44 @@ class NN:
         # set them to random vaules
         for i in range(self.ni):
             for j in range(self.nh):
-                self.wi[i][j] = rand(-0.2, 0.2)
+                self.wi[i][j] = rand(0, 0.02)
         for j in range(self.nh):
             for k in range(self.no):
-                self.wo[j][k] = rand(-2.0, 2.0)
+                self.wo[j][k] = rand(0, 0.10)
 
         # last change in weights for momentum
         self.ci = makeMatrix(self.ni, self.nh)
         self.co = makeMatrix(self.nh, self.no)
 
-    def writeWeightsToFile(self, filename):
-        file = open(filename + "_input_weights",'w')
-        wi.tofile(file)
-        file.flush()
-        file.close()
+    # def writeWeightsToFile(self, filename):
+        # file = open(filename + "_input_weights",'w')
+        # self.wi.tofile(file)
+        # file.flush()
+        # file.close()
 
-        file = open(filename + "_output_weights",'w')
-        wo.tofile(file)
-        file.flush()
-        file.close()
+        # file = open(filename + "_output_weights",'w')
+        # self.wo.tofile(file)
+        # file.flush()
+        # file.close()
 
-    def loadWeightsFromFile(self, filename):
-        if os.path.isfile(filename + "_input_weights"):
-                file = open(filename + "_input_weights",'r')
-                size = len(self.wi)
-                self.wi = []
-                self.wi.fromfile(file,size)
-                file.close()
-        if os.path.isfile(filename + "_output_weights"):
-                file = open(filename + "_output_weights",'r')
-                size = len(self.wo)
-                self.wo = []
-                self.wo.fromfile(file,size)
-                file.close()
+    # def loadWeightsFromFile(self, filename):
+        # if os.path.isfile(filename + "_input_weights"):
+                # file = open(filename + "_input_weights",'r')
+                # size = len(self.wi)
+                # self.wi = []
+                # self.wi.fromfile(file,size)
+                # file.close()
+        # if os.path.isfile(filename + "_output_weights"):
+                # file = open(filename + "_output_weights",'r')
+                # size = len(self.wo)
+                # self.wo = []
+                # self.wo.fromfile(file,size)
+                # file.close()
 
     def update(self, inputs):
         if len(inputs) != self.ni-1:
             raise ValueError('wrong number of inputs')
-
+			
         # input activations
         for i in range(self.ni-1):
             #self.ai[i] = sigmoid(inputs[i])
@@ -104,7 +104,10 @@ class NN:
             for j in range(self.nh):
                 sum = sum + self.ah[j] * self.wo[j][k]
             self.ao[k] = sigmoid(sum)
-
+	
+        #print "input activations",self.ai
+        #print "hidden activations",self.ah
+        #print "output activations",self.ao
         return self.ao[:]
 
 
@@ -117,6 +120,7 @@ class NN:
         for k in range(self.no):
             error = targets[k]-self.ao[k]
             output_deltas[k] = dsigmoid(self.ao[k]) * error
+            #print targets[k],self.ao[k],dsigmoid(self.ao[k]), error
 
         # calculate error terms for hidden
         hidden_deltas = [0.0] * self.nh
@@ -124,6 +128,7 @@ class NN:
             error = 0.0
             for k in range(self.no):
                 error = error + output_deltas[k]*self.wo[j][k]
+            #print dsigmoid(self.ah[j]), error
             hidden_deltas[j] = dsigmoid(self.ah[j]) * error
 
         # update output weights
@@ -161,7 +166,7 @@ class NN:
         for j in range(self.nh):
             print(self.wo[j])
 
-    def train(self, patterns, iterations=1000, N=0.5, M=0.1):
+    def train(self, patterns, iterations=20, N=0.5, M=0.1):
         # N: learning rate
         # M: momentum factor
         for i in range(iterations):
@@ -171,8 +176,8 @@ class NN:
                 targets = p[1]
                 self.update(inputs)
                 error = error + self.backPropagate(targets, N, M)
-            if i % 100 == 0:
-                print('error %-.5f' % error)
+            if i % 10 == 0:
+                print('error %-.15f' % error)
 
 
 def demo():

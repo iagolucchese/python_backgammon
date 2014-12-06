@@ -9,7 +9,6 @@ import strategy
 from game import Game, ComputerPlayer, ConsolePlayer
 
 neuralNetwork = None
-old_game = ""
 
 def otherColor(color):
 	if (color == WHITE):
@@ -30,7 +29,8 @@ def trainNetwork(old_game,desired_output,color):
 		Trains the neural network through temporal difference backpropagation
 	"""
 	old_inputs = produce_NN_inputs(old_game,color)
-	patterns = [[old_inputs,desired_output]]
+	patterns = [[old_inputs,[desired_output]]]
+	#print patterns
 	neuralNetwork.train(patterns) #accepts, in order, iterations, learning factor, and momentum as well
 	
 def produce_NN_inputs(game, color):
@@ -42,23 +42,21 @@ def produce_NN_inputs(game, color):
 	#--- start of inputs ---
 	for i in range(1,25): #for each position/triangle
 		p = game.board.points[i].pieces
-		print(p)
 		if (game.board.points[i].color == WHITE): #if this is your color, fill the first 4 inputs, and append 4 empty ones at the end
 			for j in p: #for each checker in that position
-				#print(i,j.num,((i-1)*8)+j.num)
-				if (j.num >= 3):
-					inputs[((i-1)*8)+j.num] = ((len(p)-2)/2)
+				if (p.index(j) >= 3):
+					inputs[((i-1)*8)+p.index(j)] = ((len(p)-3)/2)
 					break
 				else:
-					inputs[((i-1)*8)+j.num] = 1
+					inputs[((i-1)*8)+p.index(j)] = 1
 			#end for
-		else: #if this is NOT your color, append 4 empty inputs and then 4 to represent the checkers
+		else: #if this is NOT your color, add +4 to the position, as an offset, that represents the area reserved for black
 			for j in p: #for each checker in that position
-				if (j.num >= 3):
-					inputs[((i-1)*8)+j.num+4] = ((len(p)-2)/2)
+				if (p.index(j) >= 3):
+					inputs[((i-1)*8)+p.index(j)+4] = ((len(p)-3)/2)
 					break
 				else:
-					inputs[((i-1)*8)+j.num+4] = 1
+					inputs[((i-1)*8)+p.index(j)+4] = 1
 			#end for
 	if (color == WHITE): #append a input to determine if your color is white
 		inputs[192] = 1
@@ -81,77 +79,80 @@ class NNPlayer():
 
 	def __init__(I, color):
 		I.color = color
+		I.old_game = ""
 		
 	def interact(I, game):
 		if (I.color == WHITE): #if this is white's turn
 			#figures out the best move for white
+			print("white's turn")
 			high_score = 0
 			best_moves = []
 			for moves in game.all_choices():
 				copyGame = copy.deepcopy(game)
-				copyGame.board = copyGame.board.copy()
+				#copyGame.board = copyGame.board.copy()
 				for m in moves:
 					copyGame.move(*m)
-				score = evaluateMove(copyGame, I.color)
+				score = evaluateMove(copyGame, I.color)[0]
 				#print("SCORE: {:5}	 PATH: {}".format(score, moves))
 				if score > high_score:
 					high_score = score
 					best_moves = moves
 					
 			for move in best_moves: #and then perform the best move on the board
-				#print("MOVE:", move)
+				print("MOVE:", move, high_score, I.color)
 				game.draw()
 				game.move(*move)
 			
 			#train the NN based on the old board, and this new evaluation
-			global old_game
-			if old_game != "" and best_moves != []: #if this isn't the first move
+			if I.old_game != "" and best_moves != []: #if this isn't the first move
 				if (game.board.finished()):
-					trainNetwork(old_game,1,otherColor(I.color)) #game's over, one last training with desired_output = 1, because this side won
+					trainNetwork(I.old_game,1,otherColor(I.color)) #game's over, one last training with desired_output = 1, because this side won
 				else:				
-					trainNetwork(old_game,high_score,I.color)
+					trainNetwork(I.old_game,high_score,I.color)
 			
-			old_game = game #saves the current board as the old one, for the next turn
+			I.old_game = copy.deepcopy(game) #saves the current board as the old one, for the next turn
 		
 		else: #if this is black's turn
 			#find the worst move as black
+			print ("black's turn")
 			low_score = 1
 			worst_moves = []
-			for moves in game.all_choices():	
+			for moves in game.all_choices():
 				copyGame = copy.deepcopy(game)
-				copyGame.board = copyGame.board.copy()
+				#copyGame.board = copyGame.board.copy()
 				for m in moves:
 					copyGame.move(*m)
-				score = evaluateMove(copyGame, otherColor(I.color))
+				score = evaluateMove(copyGame, otherColor(I.color))[0]
 				#print("SCORE: {:5}	 PATH: {}".format(score, moves))
+				#print score, low_score
 				if score < low_score:
 					low_score = score
 					worst_moves = moves
 			
 			for move in worst_moves: #and then perform the best move on a temp board
-				#print("MOVE:", move)
+				print("MOVE:", move, low_score, I.color)
 				game.draw()
 				game.move(*move)
 				
 			#train the NN based on the old board, and this new evaluation, trains always as white
-			global old_game
-			if old_game != "" and worst_moves != []:
+			if I.old_game != "" and worst_moves != []:
 				if (game.board.finished()):
-					trainNetwork(old_game,0,otherColor(I.color)) #game's over, one last training with desired_output = 0, because this side won
+					trainNetwork(I.old_game,0,I.color) #game's over, one last training with desired_output = 0, because this side won
 				else:
-					trainNetwork(old_game,1-low_score,otherColor(I.color)) #1-low_score means the white's chance of winning, based on the black's chance of winning
-			old_game = game
+					trainNetwork(I.old_game,low_score,I.color) #1-low_score means the white's chance of winning, based on the black's chance of winning
+			I.old_game = game
 
 if __name__ == '__main__':
 	neuralNetwork = bpnn.NN(198,50,1)
 	#if we have a file with the latest weights for the network, load it into the NN object
-	neuralNetwork.loadWeightsFromFile("nn")			
+	#neuralNetwork.loadWeightsFromFile("nn")			
 	
-	for i in range(100): #number of games you want to play
+	for i in range(1): #number of games you want to play
 		game = Game()
 		game.white = NNPlayer(WHITE)
 		game.black = NNPlayer(BLACK)
 		game.play()
 		
+		
 	#after playing those games, save the weights in a file
-	neuralNetwork.writeWeightsToFile("nn")
+	#neuralNetwork.writeWeightsToFile("nn")
